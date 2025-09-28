@@ -17,9 +17,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def is_running_in_docker():
-    return os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,18 +25,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-@&aom^13h%^ei1zzg_x=l9d7hikx(x#x$)s^fc7%v0h1=og66l"
+SECRET_KEY = "django-insecure-wu97_k2%np!t5_x%5v1l!+zp$eg&fg9@9i7wdk%9o@zhm1(t7("
 
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    '89.169.178.133',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -58,6 +51,7 @@ INSTALLED_APPS = [
     "bot",
     'django_filters',
     'drf_yasg',
+    'django_celery_beat',
 ]
 
 REST_FRAMEWORK = {
@@ -69,6 +63,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ]
 }
 
@@ -79,12 +74,6 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = "users.User"
-
-LOGIN_REDIRECT_URL = "restaurant:home_page"
-
-LOGOUT_REDIRECT_URL = "restaurant:home_page"
-
-REGISTRATION_REDIRECT_URL = "restaurant:home_page"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -125,7 +114,7 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": 'db' if is_running_in_docker() else os.getenv('DB_HOST', 'localhost'),
+        "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT", default="5432"),
     }
 }
@@ -149,11 +138,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTHENTICATION_BACKENDS = [
-    'users.backends.LimitedPermissionsBackend',
-    'django.contrib.auth.backends.ModelBackend',
-]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -172,10 +156,6 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -193,4 +173,34 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")
 DEFAULT_FROM_EMAIL = os.getenv("APP_EMAIL")
 ADMIN_EMAIL = os.getenv("APP_EMAIL")
 
-X_FRAME_OPTIONS = 'SAMEORIGIN'
+# Настройки для Celery
+
+# URL-адрес брокера сообщений
+CELERY_BROKER_URL = 'redis://localhost:6379' # Например, Redis, который по умолчанию работает на порту 6379
+
+# URL-адрес брокера результатов, также Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+# Часовой пояс для работы Celery
+CELERY_TIMEZONE = "Europe/Moscow"
+TIME_ZONE = 'Europe/Moscow'  # Ваш часовой пояс
+USE_TZ = True  # Должно быть True
+
+# Флаг отслеживания выполнения задач
+CELERY_TASK_TRACK_STARTED = True
+
+# Максимальное время на выполнение задачи
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    'habits_reminder': {
+        'task': 'tracker.tasks.habits_reminder',
+        'schedule': timedelta(seconds=60),
+    },
+}
+
+# Настройки телеграм бота
+TELEGRAM_BOT_TOKEN = 'os.getenv("TG_BOT_TOKEN")' # Токен телеграм бота
+TELEGRAM_CHAT_ID = 'hht525_bot'  # Для отправки уведомлений

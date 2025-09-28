@@ -1,6 +1,10 @@
+import ulid
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+def generate_ulid():
+    return ulid.ULID()
 
 
 class CustomUserManager(BaseUserManager):
@@ -31,11 +35,12 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    id = models.CharField(primary_key=True, max_length=26, default=generate_ulid, editable=False)
     username = None
-    email = models.EmailField(primary_key=True, unique=True, verbose_name="E-mail")
+    email = models.EmailField(unique=True, verbose_name="E-mail")
     first_name = models.CharField(max_length=50, verbose_name="First name")
     last_name = models.CharField(max_length=50, verbose_name="Last name", null=True, blank=True)
-    telegram_id = models.CharField(max_length=50, verbose_name="Telegram ID", null=True, blank=True)
+    telegram_id = models.CharField(unique=True, max_length=50, verbose_name="Telegram ID", null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
