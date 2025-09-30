@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from tasktracker.models import Task
-from tasktracker.serializers import TaskSerializer
+from tasktracker.models import Task, Category
+from tasktracker.serializers import TaskSerializer, CategorySerializer
 
 
 # Create your views here.
@@ -40,4 +40,10 @@ class TaskUpdateAPIView(generics.UpdateAPIView):
 class TaskDeleteAPIView(generics.DestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CategoryAPIViewset(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
