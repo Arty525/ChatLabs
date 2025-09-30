@@ -7,6 +7,8 @@ from asgiref.sync import sync_to_async
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand, ReplyKeyboardMarkup, KeyboardButton, \
     ReplyKeyboardRemove
 
+from bot.utils import get_welcome_message
+
 
 class TelegramBot:
     def __init__(self):
@@ -14,12 +16,21 @@ class TelegramBot:
         self.dp = Dispatcher()
         self.setup_handlers()
 
+    async def set_bot_commands(self):
+        """Установка команд меню бота"""
+        commands = [
+            BotCommand(command="start", description="Запустить бота"),
+            BotCommand(command="menu", description="Показать главное меню"),
+        ]
+        await self.bot.set_my_commands(commands)
+
     def setup_handlers(self):
         @self.dp.message(Command("start"))
         async def cmd_start(message: types.Message):
             """Обработчик команды /start"""
             user = message.from_user
-            welcome_text = 'Тест бота'
+            print(user.id)
+            welcome_text = await get_welcome_message(user.id)
 
             await message.answer(welcome_text)
 
