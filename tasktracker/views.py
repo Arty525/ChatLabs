@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from tasktracker.models import Task, Category
 from tasktracker.serializers import TaskSerializer, CategorySerializer
+from users.permissions import IsSuperUser, IsOwner
 
 
 # Create your views here.
@@ -18,13 +19,19 @@ class TaskCreateAPIView(generics.CreateAPIView):
 class TaskListAPIView(generics.ListAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Task.objects.all()
+        queryset = Task.objects.filter(owner=self.request.user)
+        return queryset
 
 
 class TaskDetailAPIView(generics.RetrieveAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated, IsOwner)
 
     def get_object(self):
         task = Task.objects.get(pk=self.kwargs['pk'])
@@ -34,16 +41,16 @@ class TaskDetailAPIView(generics.RetrieveAPIView):
 class TaskUpdateAPIView(generics.UpdateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated, IsOwner)
 
 
 class TaskDeleteAPIView(generics.DestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated, IsOwner)
 
 
 class CategoryAPIViewset(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated, IsSuperUser)
