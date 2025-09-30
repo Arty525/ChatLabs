@@ -16,6 +16,19 @@ class TelegramBot:
         self.dp = Dispatcher()
         self.setup_handlers()
 
+    def get_main_menu(self):
+        """Главное меню бота"""
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="📋 Мои задачи", callback_data="my_tasks")],
+                [InlineKeyboardButton(text="➕ Создать задачу", callback_data="create_task")],
+                [InlineKeyboardButton(text="📊 Категории", callback_data="stats")],
+            ]
+        )
+
+        return keyboard
+
     async def set_bot_commands(self):
         """Установка команд меню бота"""
         commands = [
@@ -32,7 +45,14 @@ class TelegramBot:
             print(user.id)
             welcome_text = await get_welcome_message(user.id)
 
-            await message.answer(welcome_text)
+            await message.answer(welcome_text, reply_markup=self.get_main_menu())
+
+        @self.dp.callback_query(F.data == "my_tasks")
+        async def cmd_profile(callback: types.CallbackQuery):
+            await callback.answer()
+            await callback.message.answer('Список задач')
+
+
 
     async def start_polling(self):
         """Запуск бота в режиме polling"""

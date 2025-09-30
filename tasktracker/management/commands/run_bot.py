@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = 'Запускает Telegram бота для работы с моделью Customer'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('🚀 Запуск Telegram бота для заказчиков...'))
+        self.stdout.write(self.style.SUCCESS('🚀 Запуск Telegram бота'))
 
         bot = TelegramBot()
 
