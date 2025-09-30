@@ -29,3 +29,13 @@ class TaskDetailAPIView(generics.RetrieveAPIView):
     def get_object(self):
         task = Task.objects.get(pk=self.kwargs['pk'])
         return task
+
+
+class TaskUpdateAPIView(generics.UpdateAPIView):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        task = Task.objects.get(pk=self.kwargs['pk'])
+        return task
