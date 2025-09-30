@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from tasktracker.models import Task
+from tasktracker.models import Task, Category
 
 
 # Register your models here.
@@ -11,5 +11,6 @@ class TaskAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description')
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title')
+    list_display = ('title',)

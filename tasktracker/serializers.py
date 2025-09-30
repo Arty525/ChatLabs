@@ -5,14 +5,17 @@ from tasktracker.models import Task, Category
 from tasktracker.validators import TaskDeadlineValidator
 
 class TaskSerializer(serializers.ModelSerializer):
-    model = Task
-    fields = '__all__'
-    validators = [TaskDeadlineValidator,]
+    deadline = serializers.DateTimeField(input_formats=['%d.%m.%Y %H:%M'], )
+    class Meta:
+        model = Task
+        fields = '__all__'
+        validators = [TaskDeadlineValidator(deadline='deadline',),]
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    model = Category
-    fields = '__all__'
+    class Meta:
+        model = Category
+        fields = '__all__'
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

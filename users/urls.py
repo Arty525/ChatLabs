@@ -6,7 +6,7 @@ from .views import UserListAPIView, UserRetrieveAPIView, UserCreateAPIView, \
     UserUpdateAPIView, UserDestroyAPIView
 
 app_name = "users"
-urlpatterns = {
+urlpatterns = [
     path("", UserListAPIView.as_view(), name="user_list"),  # список всех пользователей
     path(
         "<int:pk>/", UserRetrieveAPIView.as_view(), name="user_retrieve"
@@ -26,4 +26,4 @@ urlpatterns = {
     path(
         "update/<int:pk>", UserUpdateAPIView.as_view(), name="update_user"
     ),  # обновление данных пользователя
-}
+]

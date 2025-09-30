@@ -4,14 +4,13 @@ from django.db import models
 
 # Create your models here.
 def generate_ulid():
-    return str(ulid.new())
+    return ulid.ULID()
 
 class Category(models.Model):
-    id = models.CharField(primary_key=True, max_length=26, default=generate_ulid)
-    title = models.CharField(max_length=255)
+    title = models.CharField(primary_key=True, max_length=255)
 
     def __str__(self):
-        return f'{self.id} {self.title}'
+        return f'{self.title}'
 
 
     class Meta:
@@ -35,8 +34,11 @@ class Task(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deadline = models.DateTimeField(default=None, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='created')
-    owner = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    owner = models.ForeignKey('users.User', on_delete=models.CASCADE, blank=True, null=True)
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
+
+    def get_formatted_created_at(self):
+        return self.created_at.strftime("%d.%m.%Y %H:%M")
 
     def __str__(self):
         return (f'{self.id} {self.title} | status: {self.status}, owner: {self.owner}, category: {self.category}, '
