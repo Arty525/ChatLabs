@@ -41,7 +41,7 @@ class Task(models.Model):
         return self.created_at.strftime("%d.%m.%Y %H:%M")
 
     def __str__(self):
-        return (f'{self.id} {self.title} | status: {self.status}, owner: {self.owner}, category: {self.category}, '
+        return (f'{self.id} {self.title} | status: {self.status}, owner: {self.owner.email}, category: {self.category}, '
                 f'deadline: {self.deadline}')
 
     class Meta:

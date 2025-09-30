@@ -35,9 +35,9 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    id = models.CharField(primary_key=True, max_length=26, default=generate_ulid, editable=False)
+    id = models.CharField(primary_key=False, default=generate_ulid, editable=False)
     username = None
-    email = models.EmailField(unique=True, verbose_name="E-mail")
+    email = models.EmailField(primary_key=True, unique=True, verbose_name="E-mail")
     first_name = models.CharField(max_length=50, verbose_name="First name")
     last_name = models.CharField(max_length=50, verbose_name="Last name", null=True, blank=True)
     telegram_id = models.CharField(unique=True, max_length=50, verbose_name="Telegram ID", null=True, blank=True)
@@ -48,7 +48,7 @@ class User(AbstractUser):
     objects = CustomUserManager()
 
     def __str__(self):
-        return f"{self.username} - {self.email}"
+        return f"{self.email}"
 
     class Meta:
         verbose_name = "User"

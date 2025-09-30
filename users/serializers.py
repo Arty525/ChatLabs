@@ -1,6 +1,8 @@
 # serializers.py
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from .models import User
 from .validators import EmailValidator, FirstNameValidator, LastNameValidator, TelegramIdValidator
 
@@ -80,3 +82,28 @@ class ChangePasswordSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError({"new_password_confirm": "Пароли не совпадают."})
         return attrs
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'  # Указываем, что используем email вместо username
+
+    def validate(self, attrs):
+        # Пробуем аутентифицировать с email
+        try:
+            attrs['username'] = attrs.get('email')  # Добавляем username для совместимости
+            return super().validate(attrs)
+        except Exception as e:
+            raise serializers.ValidationError({
+                'detail': 'No active account found with the given credentials'
+            })
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Добавляем кастомные claims в токен
+        token['email'] = user.email
+        token['first_name'] = user.first_name
+        token['last_name'] = user.last_name
+
+        return token
