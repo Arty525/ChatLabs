@@ -38,6 +38,5 @@ schema_view = get_schema_view(
 urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),
     path("api/", include("tasktracker.urls", namespace="tasktracker")),
-    path("bot/", include("bot.urls", namespace="bot")),
     path("users/", include("users.urls", namespace="users")),
 ]

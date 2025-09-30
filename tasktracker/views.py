@@ -1,13 +1,39 @@
+import asyncio
+import json
+import types
+
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from bot.bot import TelegramBot
 from tasktracker.models import Task, Category
 from tasktracker.serializers import TaskSerializer, CategorySerializer
 from users.permissions import IsSuperUser, IsOwner
 
 
-# Create your views here.
+bot = TelegramBot()
+
+
+@csrf_exempt
+@require_POST
+def webhook(request):
+    """Обработчик вебхуков от Telegram"""
+    try:
+        update = json.loads(request.body)
+
+        asyncio.run(bot.dp.feed_update(bot.bot, types.Update(**update)))
+        return HttpResponse("OK")
+
+    except json.JSONDecodeError as e:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+
 class TaskCreateAPIView(generics.CreateAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer

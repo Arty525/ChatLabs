@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "tasktracker",
     "users",
-    "bot",
     'django_filters',
     'drf_yasg',
     'django_celery_beat',
@@ -202,5 +201,5 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # Настройки телеграм бота
-TELEGRAM_BOT_TOKEN = 'os.getenv("TG_BOT_TOKEN")' # Токен телеграм бота
-TELEGRAM_CHAT_ID = 'hht525_bot'  # Для отправки уведомлений
+TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN") # Токен телеграм бота
+TELEGRAM_CHAT_ID = 'tasktracker525_bot'  # Для отправки уведомлений

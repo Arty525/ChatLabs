@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from tasktracker.views import TaskCreateAPIView, TaskListAPIView, TaskDetailAPIView, TaskUpdateAPIView, \
-    TaskDeleteAPIView, CategoryAPIViewset
+    TaskDeleteAPIView, CategoryAPIViewset, webhook
 
 app_name='tasktracker'
 
@@ -14,4 +14,5 @@ urlpatterns = [
     path('task_info/<str:pk>/', TaskDetailAPIView.as_view(), name='task_info'),
     path('update_task/<str:pk>/', TaskUpdateAPIView.as_view(), name='update_task'),
     path('delete_task/<str:pk>/', TaskDeleteAPIView.as_view(), name='delete_task'),
+    path('webhook/', webhook, name='telegram_webhook')
 ] + router.urls
