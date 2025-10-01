@@ -4,12 +4,17 @@ import re
 import django
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from django.conf import settings
 from asgiref.sync import sync_to_async
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand, ReplyKeyboardMarkup, KeyboardButton, \
     ReplyKeyboardRemove
-
 from bot.utils import get_welcome_message, add_tg_id
+from aiogram.filters.state import State, StatesGroup
+
+
+class Form(StatesGroup):
+    waiting_for_email = State()
 
 
 class TelegramBot:
@@ -40,33 +45,38 @@ class TelegramBot:
         await self.bot.set_my_commands(commands)
 
     def setup_handlers(self):
+
+
         @self.dp.message(Command("start"))
-        async def cmd_start(message: types.Message):
+        async def cmd_start(message: types.Message, state: FSMContext):
             """Обработчик команды /start"""
             user = message.from_user
-            print(user.id)
             welcome_text, is_registered = await get_welcome_message(user.id)
             if is_registered:
                 await message.answer(welcome_text, reply_markup=self.get_main_menu())
+                await state.clear()
             else:
                 await message.answer(welcome_text)
-            @self.dp.message(lambda message: re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', message.text))
-            async def registration(message: types.Message):
-                message_text = await add_tg_id(message.text, user.id)
-                await message.answer(message_text)
+                await state.set_state(Form.waiting_for_email)
 
-            @self.dp.message()
-            async def bad_input(message: types.Message):
-                message_text = 'Email input is not valid. Please try again.'
-                await message.answer(message_text)
+        @self.dp.message(Form.waiting_for_email, F.text.regexp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'))
+        async def registration(message: types.Message, state: FSMContext):
+            user = message.from_user
+            message_text, is_registered = await add_tg_id(message.text, user.id)
+            await message.answer(message_text)
+            if is_registered:
+                await state.clear()
 
-
-
+        @self.dp.message(Form.waiting_for_email)
+        async def bad_email_input(message: types.Message, state: FSMContext):
+            await message.answer("❌Please enter a valid email address.")
 
         @self.dp.callback_query(F.data == "my_tasks")
         async def cmd_profile(callback: types.CallbackQuery):
             await callback.answer()
             await callback.message.answer('Список задач')
+
+
 
 
 
