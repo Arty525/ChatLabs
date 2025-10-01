@@ -37,9 +37,6 @@ class Task(models.Model):
     owner = models.ForeignKey('users.User', on_delete=models.CASCADE, blank=True, null=True)
     category = models.ForeignKey('Category', on_delete=models.CASCADE)
 
-    def get_formatted_created_at(self):
-        return self.created_at.strftime("%d.%m.%Y %H:%M")
-
     def __str__(self):
         return (f'{self.id} {self.title} | status: {self.status}, owner: {self.owner.email}, category: {self.category}, '
                 f'deadline: {self.deadline}')

@@ -1,4 +1,3 @@
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import User
 from .serializers import UserSerializer
@@ -12,7 +11,7 @@ class UserListAPIView(generics.ListAPIView):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
 
 
 class UserRetrieveAPIView(generics.RetrieveAPIView):
@@ -21,7 +20,7 @@ class UserRetrieveAPIView(generics.RetrieveAPIView):
     """
 
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
     serializer_class = UserSerializer
 
 
@@ -31,7 +30,7 @@ class UserDestroyAPIView(generics.DestroyAPIView):
     """
 
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
 
 
 class UserUpdateAPIView(generics.UpdateAPIView):
@@ -41,7 +40,7 @@ class UserUpdateAPIView(generics.UpdateAPIView):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated,]
+    # permission_classes = [IsAuthenticated,]
 
     def update(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -57,7 +56,7 @@ class UserCreateAPIView(generics.CreateAPIView):
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+    # permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
         user = serializer.save(is_active=True)

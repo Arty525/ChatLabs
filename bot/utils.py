@@ -1,5 +1,6 @@
 from asgiref.sync import sync_to_async
 from users.models import User
+import requests
 
 
 async def get_welcome_message(tg_id):
@@ -29,3 +30,7 @@ async def add_tg_id(email, tg_id):
         message = f'⚠️Sorry, an error occurred: {str(e)}'
     return message, is_registered
 
+async def get_user_tasks(tg_id):
+    response = requests.get(f'http://127.0.0.1:8000/api/tasks_list/?telegram_id={tg_id}')
+    result = response.json()
+    return result
