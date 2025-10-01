@@ -58,9 +58,13 @@ class TaskListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         telegram_id = self.request.GET.get("telegram_id")
-        if telegram_id:
+        category = self.request.GET.get("category")
+        if telegram_id and not category:
             user = User.objects.get(telegram_id=telegram_id)
             return Task.objects.filter(owner=user)
+        elif telegram_id and category:
+            user = User.objects.get(telegram_id=telegram_id)
+            return Task.objects.filter(owner=user, category=category)
         else:
             if self.request.user.is_superuser:
                 return Task.objects.all()

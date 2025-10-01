@@ -4,6 +4,7 @@ from aiogram.types.inline_keyboard_markup import InlineKeyboardMarkup
 from asgiref.sync import sync_to_async
 from users.models import User
 import requests
+import aiohttp
 
 
 async def get_welcome_message(tg_id):
@@ -33,37 +34,55 @@ async def add_tg_id(email, tg_id):
         message = f'⚠️ Sorry, an error occurred: {str(e)}'
     return message, is_registered
 
-async def get_user_tasks(tg_id):
-    response = requests.get(f'http://127.0.0.1:8000/api/tasks_list/?telegram_id={tg_id}')
+async def get_user_tasks(tg_id, category=None):
+    params = {'telegram_id': tg_id, 'category': category}
+    response = requests.get(f'http://127.0.0.1:8000/api/tasks_list/', params=params)
     result = response.json()
     messages = []
     for task in result:
-        message_text = f'''Task: {task['title']}
-    Category: {task['category']}
-    Created at: {datetime.fromisoformat(task['created_at']).strftime("%d.%m.%Y %H:%M")}
-    Deadline: {datetime.fromisoformat(task['deadline']).strftime("%d.%m.%Y %H:%M")}
-    Description: {task['description']}
-    Status: {task['status']}'''
+        message_text = f'''💼 Task: {task['title']}
+        🗂️ Category: {task['category']}
+        🕒 Created at: {datetime.fromisoformat(task['created_at']).strftime("%d.%m.%Y %H:%M")}
+        🕒 Deadline: {datetime.fromisoformat(task['deadline']).strftime("%d.%m.%Y %H:%M")}
+        📃 Description: {task['description']}
+        🏷️ Status: {task['status']}'''
         messages.append(message_text)
+    if len(messages) == 0:
+        return '❌ No tasks found'
     return messages
 
-async def get_categories():
+async def get_categories(prefix=None):
     response = requests.get('http://127.0.0.1:8000/api/category/')
     result = response.json()
     keyboard_buttons = []
     for category in result:
-        keyboard_buttons.append([InlineKeyboardButton(text=category['title'], callback_data=f"category_{category['title']}")])
+        keyboard_buttons.append([InlineKeyboardButton(text=f'{prefix or ''}{category['title']}', callback_data=f"{prefix or ''}category_{category['title']}")])
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 
+
 async def save_task(task_data, tg_id):
     try:
-        response = requests.post(f'http://127.0.0.1:8000/api/new_task/?telegram_id={tg_id}', json=task_data)
-        result = response.json()
+        response = requests.post(
+            f'http://127.0.0.1:8000/api/new_task/?telegram_id={tg_id}',
+            json=task_data,
+            timeout=10  # ✅ Таймаут 10 секунд
+        )
 
-        if result.get('non_field_errors'):
-            return '❌ Deadline cannot be earlier than now', False
-        return '✅ Task added successfully', True
+        if response.status_code == 201:
+            return '✅ Task added successfully', True
+        elif response.status_code == 400:
+            result = response.json()
+            if result.get('non_field_errors'):
+                return '❌ Deadline cannot be earlier than now', False
+            else:
+                return f'❌ Validation error: {result}', False
+        else:
+            return f'❌ Server error: {response.status_code}', False
+
+    except requests.exceptions.Timeout:
+        return '❌ Request timeout - server not responding', False
+    except requests.exceptions.ConnectionError:
+        return '❌ Connection error - check server', False
     except Exception as e:
         return f'❌ An error occurred: {str(e)}', False
-
