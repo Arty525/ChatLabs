@@ -43,7 +43,12 @@ class TaskCreateAPIView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        telegram_id = self.request.GET.get("telegram_id")
+        if telegram_id:
+            user = User.objects.get(telegram_id=telegram_id)
+        else:
+            user = self.request.user
+        serializer.save(owner=user)
 
 
 class TaskListAPIView(generics.ListAPIView):
