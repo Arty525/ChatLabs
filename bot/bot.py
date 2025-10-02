@@ -6,12 +6,16 @@ from django.conf import settings
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 from unicodedata import category
 
-from bot.utils import get_welcome_message, add_tg_id, get_user_tasks, get_categories, save_task
+from bot.utils import get_welcome_message, add_tg_id, get_user_tasks, get_categories, save_task, get_user, user_login, \
+    user_registration
 from aiogram.filters.state import State, StatesGroup
 
 
 class Form(StatesGroup):
     waiting_for_email = State()
+    waiting_for_password = State()
+    waiting_for_first_name = State()
+    waiting_for_last_name = State()
     waiting_for_task_title = State()
     waiting_for_task_category = State()
     waiting_for_task_deadline = State()
@@ -57,17 +61,69 @@ class TelegramBot:
             if is_registered:
                 await message.answer(welcome_text, reply_markup=self.get_main_menu())
                 await state.clear()
+            elif welcome_text.startswith('⚠️'):
+                await message.answer(welcome_text)
+                await state.clear()
             else:
                 await message.answer(welcome_text)
                 await state.set_state(Form.waiting_for_email)
 
         @self.dp.message(Form.waiting_for_email, F.text.regexp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'))
-        async def registration(message: types.Message, state: FSMContext):
-            user = message.from_user
-            message_text, is_registered = await add_tg_id(message.text, user.id)
-            await message.answer(message_text)
-            if is_registered:
+        async def searching_user(message: types.Message, state: FSMContext):
+            message_text, is_found = await get_user(message.text)
+            if is_found:
+                await message.answer(message_text)
+                await state.update_data(email=message.text, is_registered=True)
+                await state.set_state(Form.waiting_for_password)
+            elif message_text.startswith('⚠️'):
+                await message.answer(message_text)
                 await state.clear()
+            else:
+                await message.answer(message_text)
+                await state.update_data(email=message.text, is_registered=False)
+                await state.set_state(Form.waiting_for_password)
+
+        @self.dp.message(Form.waiting_for_password)
+        async def input_password(message: types.Message, state: FSMContext):
+            password = message.text
+            data = await state.get_data()
+            is_registered = data.get('is_registered')
+            is_logged_in = False
+            if is_registered:
+                message_text, is_logged_in = await user_login(password, data.get('email'))
+                await message.answer(message_text)
+                await state.clear()
+                if is_logged_in:
+                    message_text = await add_tg_id(data.get('email'), message.from_user.id)
+                    await message.answer(message_text)
+            else:
+                await message.answer('Input your first name')
+                await state.update_data(password=password)
+                await state.set_state(Form.waiting_for_first_name)
+
+        @self.dp.message(Form.waiting_for_first_name)
+        async def input_first_name(message: types.Message, state: FSMContext):
+            first_name = message.text
+            await state.update_data(first_name=first_name)
+            await message.answer('Input your last name')
+            await state.set_state(Form.waiting_for_last_name)
+
+        @self.dp.message(Form.waiting_for_last_name)
+        async def input_last_name(message: types.Message, state: FSMContext):
+            last_name = message.text
+            await state.update_data(last_name=last_name)
+            data = await state.get_data()
+            user_data = {
+                'email': data.get('email'),
+                'password': data.get('password'),
+                'password_confirm': data.get('password'),
+                'first_name': data.get('first_name'),
+                'last_name': data.get('last_name'),
+                'telegram_id': message.from_user.id
+            }
+            message_text = await user_registration(user_data)
+            await message.answer(message_text)
+            await state.clear()
 
         @self.dp.message(Form.waiting_for_email)
         async def bad_email_input(message: types.Message, state: FSMContext):

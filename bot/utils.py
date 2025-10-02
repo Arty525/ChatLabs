@@ -10,29 +10,70 @@ import aiohttp
 async def get_welcome_message(tg_id):
     is_registered = False
     try:
-        user = await sync_to_async(User.objects.get)(telegram_id=tg_id)
-        message = 'Hello! You are already registered.'
-        is_registered = True
-    except User.DoesNotExist:
-        message = 'Hello! To register your Telegram ID, enter your registered Email'
+        response = requests.get(f'http://127.0.0.1:8000/users/')
+        result = response.json()
+        if response.status_code == 200:
+            for user in result:
+                if user.get('telegram_id') == str(tg_id):
+                    message = '👋 Hello! You are already registered.'
+                    is_registered = True
+                    return message, is_registered
+            message = '👋 Hello! To register your Telegram ID, enter your registered Email'
+            return message, is_registered
     except Exception as e:
         message = f'⚠️ Sorry, an error occurred: {str(e)}'
-    finally:
         return message, is_registered
 
-async def add_tg_id(email, tg_id):
-    is_registered = False
+
+async def get_user(email):
     try:
-        user = await sync_to_async(User.objects.get)(email=email)
-        user.telegram_id = tg_id
-        await sync_to_async(user.save)()
-        message = '✅ Telegram ID added successfully'
-        is_registered = True
-    except User.DoesNotExist:
-        message = '❌ User with the provided Email was not found'
+        response = requests.get(f'http://127.0.0.1:8000/users/profile/{email}/')
+        result = response.json()
+        if response.status_code == 200:
+            return '🗝️ Input password.', True
+        else:
+            return ('❌ User with the provided Email was not found. Input password for registration '
+                    'or press /start for try again.'), False
+    except Exception as e:
+        return f'⚠️ Sorry, an error occurred: {str(e)}', False
+
+async def user_login(password, email):
+    try:
+        params = {'email': email, 'password': password}
+        response = requests.post(f'http://127.0.0.1:8000/users/token/', json=params)
+        result = response.json()
+        if response.status_code == 200:
+            return '✅ Login successful', True
+        else:
+            return '❌ Invalid email or password', False
+    except Exception as e:
+        return f'⚠️ Sorry, an error occurred: {str(e)}', False
+
+async def user_registration(user_data):
+    try:
+        params = user_data
+        response = requests.post(f'http://127.0.0.1:8000/users/registration/', json=params)
+        result = response.json()
+        if response.status_code == 201:
+            return '✅ User registered successfully'
+        else:
+            return '❌ Failed to register user'
+    except Exception as e:
+        return f'⚠️ Sorry, an error occurred: {str(e)}'
+
+
+async def add_tg_id(email, tg_id):
+    try:
+        params = {'telegram_id': tg_id}
+        response = requests.patch(f'http://127.0.0.1:8000/users/update/{email}/', json=params)
+        result = response.json()
+        if response.status_code == 200:
+            message = '✅ Telegram ID added successfully'
+        else:
+            message = '❌ Failed to change Telegram ID'
     except Exception as e:
         message = f'⚠️ Sorry, an error occurred: {str(e)}'
-    return message, is_registered
+    return message
 
 async def get_user_tasks(tg_id, category=None):
     params = {'telegram_id': tg_id, 'category': category}
@@ -56,7 +97,7 @@ async def get_categories(prefix=None):
     result = response.json()
     keyboard_buttons = []
     for category in result:
-        keyboard_buttons.append([InlineKeyboardButton(text=f'{prefix or ''}{category['title']}', callback_data=f"{prefix or ''}category_{category['title']}")])
+        keyboard_buttons.append([InlineKeyboardButton(text=f'{category['title']}', callback_data=f"{prefix or ''}category_{category['title']}")])
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
 

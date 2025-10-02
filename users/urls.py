@@ -9,10 +9,10 @@ app_name = "users"
 urlpatterns = [
     path("", UserListAPIView.as_view(), name="user_list"),  # список всех пользователей
     path(
-        "<int:pk>/", UserRetrieveAPIView.as_view(), name="user_retrieve"
+        "profile/<str:pk>/", UserRetrieveAPIView.as_view(), name="user_retrieve"
     ),  # просмотр профиля отдельного пользователя
     path(
-        "delete/<int:pk>/", UserDestroyAPIView.as_view(), name="delete_user"
+        "delete/<str:pk>/", UserDestroyAPIView.as_view(), name="delete_user"
     ),  # удаление пользователя
     path(
         "token/", TokenObtainPairView.as_view(), name="token_obtain_pair"
@@ -24,6 +24,6 @@ urlpatterns = [
         "registration/", UserCreateAPIView.as_view(), name="registration"
     ),  # регистрация пользователя
     path(
-        "update/<int:pk>", UserUpdateAPIView.as_view(), name="update_user"
+        "update/<str:pk>/", UserUpdateAPIView.as_view(), name="update_user"
     ),  # обновление данных пользователя
 ]

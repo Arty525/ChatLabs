@@ -1,4 +1,3 @@
-# serializers.py
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -44,19 +43,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        validated_data.pop('password_confirm', None)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        if password:
-            instance.set_password(password)
-
-        instance.save()
-        return instance
-
 
 class UserCreateSerializer(UserSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -66,11 +52,53 @@ class UserCreateSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields
 
 
-class UserUpdateSerializer(UserSerializer):
-    email = serializers.EmailField(read_only=True)
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор только для обновления (partial update)"""
 
-    class Meta(UserSerializer.Meta):
-        fields = [field for field in UserSerializer.Meta.fields if field != 'email']
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'telegram_id', 'password']
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False},
+            'email': {'required': False},
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+            'telegram_id': {'required': False},
+        }
+
+    def validate_email(self, value):
+        """Валидация email - не допускаем пустые значения"""
+        if value == '' or value is None:
+            # При обновлении возвращаем текущее значение email
+            if self.instance:
+                return self.instance.email
+            raise serializers.ValidationError("Email cannot be empty")
+        return value
+
+    def validate(self, attrs):
+        """Общая валидация данных"""
+        # Удаляем пустые значения перед обновлением
+        attrs = {key: value for key, value in attrs.items()
+                 if value is not None and value != ''}
+        return attrs
+
+    def update(self, instance, validated_data):
+        """Обновление пользователя с защитой от пустых значений"""
+        # Убираем пароль из validated_data для отдельной обработки
+        password = validated_data.pop('password', None)
+
+        # Обновляем только непустые значения
+        for attr, value in validated_data.items():
+            if value is not None and value != '':
+                setattr(instance, attr, value)
+
+        # Если передан пароль - хешируем его
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+
 
 
 class ChangePasswordSerializer(serializers.Serializer):
