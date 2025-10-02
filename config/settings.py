@@ -21,6 +21,10 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def is_running_in_docker():
+    return os.path.exists("/.dockerenv") or os.environ.get("DOCKER_CONTAINER") == "true"
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -32,7 +36,11 @@ STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "web",
+]
 
 
 # Application definition
@@ -48,28 +56,26 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "tasktracker",
     "users",
-    'django_filters',
-    'drf_yasg',
-    'django_celery_beat',
+    "django_filters",
+    "drf_yasg",
+    "django_celery_beat",
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.AllowAny',
-    ]
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
+    ],
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,  # Генерирует новый refresh токен при обновлении
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,  # Генерирует новый refresh токен при обновлении
 }
 
 AUTH_USER_MODEL = "users.User"
@@ -113,7 +119,7 @@ DATABASES = {
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
+        "HOST": "db" if is_running_in_docker() else os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", default="5432"),
     }
 }
@@ -163,26 +169,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.yandex.ru"
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = os.getenv("APP_EMAIL")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")
-DEFAULT_FROM_EMAIL = os.getenv("APP_EMAIL")
-ADMIN_EMAIL = os.getenv("APP_EMAIL")
-
 # Настройки для Celery
 
-# URL-адрес брокера сообщений
-CELERY_BROKER_URL = 'redis://localhost:6379' # Например, Redis, который по умолчанию работает на порту 6379
-
-# URL-адрес брокера результатов, также Redis
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 # Часовой пояс для работы Celery
 CELERY_TIMEZONE = "Europe/Moscow"
-TIME_ZONE = 'Europe/Moscow'  # Ваш часовой пояс
+TIME_ZONE = "Europe/Moscow"  # Ваш часовой пояс
 USE_TZ = True  # Должно быть True
 
 # Флаг отслеживания выполнения задач
@@ -194,12 +188,18 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
-    'habits_reminder': {
-        'task': 'tracker.tasks.habits_reminder',
-        'schedule': timedelta(seconds=60),
+    "update_task_status": {
+        "task": "tasktracker.tasks.update_task_status",
+        "schedule": timedelta(minutes=6),
+    },
+    "send_reminders": {
+        "task": "tasktracker.tasks.send_reminder",
+        "schedule": timedelta(hours=6),
     },
 }
 
 # Настройки телеграм бота
-TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN") # Токен телеграм бота
-TELEGRAM_CHAT_ID = 'tasktracker525_bot'  # Для отправки уведомлений
+API_BASE_URL = os.getenv("API_BASE_URL", "http://web:8000")
+TELEGRAM_BOT_TOKEN = os.getenv("TG_TOKEN")
+TELEGRAM_WEBHOOK_URL = os.getenv("TG_WEBHOOK_URL", "")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TG_WEBHOOK_SECRET", "")

@@ -4,10 +4,17 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from django.conf import settings
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
-from unicodedata import category
 
-from bot.utils import get_welcome_message, add_tg_id, get_user_tasks, get_categories, save_task, get_user, user_login, \
-    user_registration
+from bot.utils import (
+    get_welcome_message,
+    add_tg_id,
+    get_user_tasks,
+    get_categories,
+    save_task,
+    get_user,
+    user_login,
+    user_registration,
+)
 from aiogram.filters.state import State, StatesGroup
 
 
@@ -34,7 +41,11 @@ class TelegramBot:
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text="📋 My tasks", callback_data="my_tasks")],
-                [InlineKeyboardButton(text="➕ Create task", callback_data="create_task")],
+                [
+                    InlineKeyboardButton(
+                        text="➕ Create task", callback_data="create_task"
+                    )
+                ],
                 [InlineKeyboardButton(text="🗂️ Categories", callback_data="categories")],
             ]
         )
@@ -61,21 +72,24 @@ class TelegramBot:
             if is_registered:
                 await message.answer(welcome_text, reply_markup=self.get_main_menu())
                 await state.clear()
-            elif welcome_text.startswith('⚠️'):
+            elif welcome_text.startswith("⚠️"):
                 await message.answer(welcome_text)
                 await state.clear()
             else:
                 await message.answer(welcome_text)
                 await state.set_state(Form.waiting_for_email)
 
-        @self.dp.message(Form.waiting_for_email, F.text.regexp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'))
+        @self.dp.message(
+            Form.waiting_for_email,
+            F.text.regexp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"),
+        )
         async def searching_user(message: types.Message, state: FSMContext):
             message_text, is_found = await get_user(message.text)
             if is_found:
                 await message.answer(message_text)
                 await state.update_data(email=message.text, is_registered=True)
                 await state.set_state(Form.waiting_for_password)
-            elif message_text.startswith('⚠️'):
+            elif message_text.startswith("⚠️"):
                 await message.answer(message_text)
                 await state.clear()
             else:
@@ -87,17 +101,21 @@ class TelegramBot:
         async def input_password(message: types.Message, state: FSMContext):
             password = message.text
             data = await state.get_data()
-            is_registered = data.get('is_registered')
+            is_registered = data.get("is_registered")
             is_logged_in = False
             if is_registered:
-                message_text, is_logged_in = await user_login(password, data.get('email'))
+                message_text, is_logged_in = await user_login(
+                    password, data.get("email")
+                )
                 await message.answer(message_text)
                 await state.clear()
                 if is_logged_in:
-                    message_text = await add_tg_id(data.get('email'), message.from_user.id)
+                    message_text = await add_tg_id(
+                        data.get("email"), message.from_user.id
+                    )
                     await message.answer(message_text)
             else:
-                await message.answer('Input your first name')
+                await message.answer("Input your first name")
                 await state.update_data(password=password)
                 await state.set_state(Form.waiting_for_first_name)
 
@@ -105,7 +123,7 @@ class TelegramBot:
         async def input_first_name(message: types.Message, state: FSMContext):
             first_name = message.text
             await state.update_data(first_name=first_name)
-            await message.answer('Input your last name')
+            await message.answer("Input your last name")
             await state.set_state(Form.waiting_for_last_name)
 
         @self.dp.message(Form.waiting_for_last_name)
@@ -114,12 +132,12 @@ class TelegramBot:
             await state.update_data(last_name=last_name)
             data = await state.get_data()
             user_data = {
-                'email': data.get('email'),
-                'password': data.get('password'),
-                'password_confirm': data.get('password'),
-                'first_name': data.get('first_name'),
-                'last_name': data.get('last_name'),
-                'telegram_id': message.from_user.id
+                "email": data.get("email"),
+                "password": data.get("password"),
+                "password_confirm": data.get("password"),
+                "first_name": data.get("first_name"),
+                "last_name": data.get("last_name"),
+                "telegram_id": message.from_user.id,
             }
             message_text = await user_registration(user_data)
             await message.answer(message_text)
@@ -132,14 +150,14 @@ class TelegramBot:
         @self.dp.callback_query(F.data == "my_tasks")
         async def cmd_my_tasks(callback: types.CallbackQuery):
             messages = await get_user_tasks(callback.from_user.id)
-            await callback.message.answer('📋 List of tasks')
+            await callback.message.answer("📋 List of tasks")
             for message_text in messages:
                 await callback.message.answer(message_text)
             await callback.answer()
 
         @self.dp.callback_query(F.data == "create_task")
         async def cmd_create_task(callback: types.CallbackQuery, state: FSMContext):
-            await callback.message.answer('Input task title')
+            await callback.message.answer("Input task title")
             await callback.answer()
             await state.set_state(Form.waiting_for_task_title)
 
@@ -147,7 +165,7 @@ class TelegramBot:
         async def task_title_input(message: types.Message, state: FSMContext):
             task_title = message.text
             await state.update_data(task_title=task_title)
-            await message.answer('Input task description')
+            await message.answer("Input task description")
             await state.set_state(Form.waiting_for_task_description)
 
         @self.dp.message(Form.waiting_for_task_description)
@@ -155,17 +173,20 @@ class TelegramBot:
             task_description = message.text
             categories = await get_categories()
             await state.update_data(task_description=task_description)
-            await message.answer('Input task category', reply_markup=categories)
+            await message.answer("Input task category", reply_markup=categories)
 
         @self.dp.callback_query(F.data.startswith("category_"))
         async def task_category_input(callback: types.CallbackQuery, state: FSMContext):
             task_category = callback.data.split("_")[1]
             await state.update_data(task_category=task_category)
             await callback.answer()
-            await callback.message.answer('Input task deadline')
+            await callback.message.answer("Input task deadline")
             await state.set_state(Form.waiting_for_task_deadline)
 
-        @self.dp.message(Form.waiting_for_task_deadline, F.text.regexp(r'^\d{2}.\d{2}.\d{4} \d{2}:\d{2}$'))
+        @self.dp.message(
+            Form.waiting_for_task_deadline,
+            F.text.regexp(r"^\d{2}.\d{2}.\d{4} \d{2}:\d{2}$"),
+        )
         async def task_deadline_input(message: types.Message, state: FSMContext):
             task_deadline = message.text
             await state.update_data(task_deadline=task_deadline)
@@ -173,12 +194,14 @@ class TelegramBot:
 
         @self.dp.message(Form.waiting_for_task_deadline)
         async def datetime_bad_input(message: types.Message, state: FSMContext):
-            await message.answer('❌ Please enter valid datetime in format dd.mm.yyyy hh:mm')
+            await message.answer(
+                "❌ Please enter valid datetime in format dd.mm.yyyy hh:mm"
+            )
 
         @self.dp.callback_query(F.data == "categories")
         async def show_categories(callback: types.CallbackQuery):
-            categories = await get_categories('show_')
-            await callback.message.answer('Tasks categories', reply_markup=categories)
+            categories = await get_categories("show_")
+            await callback.message.answer("Tasks categories", reply_markup=categories)
             await callback.answer()
 
         @self.dp.callback_query(F.data.startswith("show_category_"))
@@ -186,8 +209,10 @@ class TelegramBot:
             category = callback.data.split("_")[2]
             messages = await get_user_tasks(callback.from_user.id, category)
             await callback.answer()
-            if type(messages) == list:
-                await callback.message.answer(f'📋 List of tasks in category {category}')
+            if isinstance(messages, list):
+                await callback.message.answer(
+                    f"📋 List of tasks in category {category}"
+                )
                 for message_text in messages:
                     await callback.message.answer(message_text)
             else:
@@ -196,10 +221,10 @@ class TelegramBot:
     async def create_task(self, message: types.Message, state: FSMContext):
         data = await state.get_data()
         task_data = {
-            'title': data.get('task_title'),
-            'description': data.get('task_description'),
-            'category': data.get('task_category'),
-            'deadline': data.get('task_deadline'),
+            "title": data.get("task_title"),
+            "description": data.get("task_description"),
+            "category": data.get("task_category"),
+            "deadline": data.get("task_deadline"),
         }
         answer_message, is_created = await save_task(task_data, message.from_user.id)
         await message.answer(answer_message)

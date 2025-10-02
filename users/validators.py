@@ -10,8 +10,10 @@ class TelegramIdValidator:
             return value
 
         # Telegram ID должен содержать только цифры и быть не короче 5 символов
-        if not re.match(r'^\d{5,}$', str(value)):
-            raise ValidationError("Telegram ID должен содержать только цифры и быть не короче 5 символов.")
+        if not re.match(r"^\d{5,}$", str(value)):
+            raise ValidationError(
+                "Telegram ID должен содержать только цифры и быть не короче 5 символов."
+            )
 
         # Проверка максимальной длины
         if len(str(value)) > 50:
@@ -28,7 +30,7 @@ class EmailValidator:
             raise ValidationError("Email является обязательным полем.")
 
         # Базовая проверка формата email
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(email_regex, value):
             raise ValidationError("Введите корректный email адрес.")
 
@@ -51,7 +53,7 @@ class FirstNameValidator:
             raise ValidationError("Имя не может превышать 50 символов.")
 
         # Проверка на допустимые символы (только буквы, пробелы и дефисы)
-        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ\s\-]+$', value):
+        if not re.match(r"^[a-zA-Zа-яА-ЯёЁ\s\-]+$", value):
             raise ValidationError("Имя может содержать только буквы, пробелы и дефисы.")
 
         return value
@@ -70,7 +72,9 @@ class LastNameValidator:
             raise ValidationError("Фамилия не может превышать 50 символов.")
 
         # Проверка на допустимые символы (только буквы, пробелы и дефисы)
-        if not re.match(r'^[a-zA-Zа-яА-ЯёЁ\s\-]+$', value):
-            raise ValidationError("Фамилия может содержать только буквы, пробелы и дефисы.")
+        if not re.match(r"^[a-zA-Zа-яА-ЯёЁ\s\-]+$", value):
+            raise ValidationError(
+                "Фамилия может содержать только буквы, пробелы и дефисы."
+            )
 
         return value

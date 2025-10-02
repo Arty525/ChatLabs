@@ -1,9 +1,13 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import UserListAPIView, UserRetrieveAPIView, UserCreateAPIView, \
-    UserUpdateAPIView, UserDestroyAPIView
+from .views import (
+    UserListAPIView,
+    UserRetrieveAPIView,
+    UserCreateAPIView,
+    UserUpdateAPIView,
+    UserDestroyAPIView,
+)
 
 app_name = "users"
 urlpatterns = [

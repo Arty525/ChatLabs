@@ -6,10 +6,10 @@ from bot.bot import TelegramBot
 
 
 class Command(BaseCommand):
-    help = 'Запускает Telegram бота для работы с моделью Customer'
+    help = "Запускает Telegram бота для работы с моделью Customer"
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('🚀 Запуск Telegram бота'))
+        self.stdout.write(self.style.SUCCESS("🚀 Запуск Telegram бота"))
 
         bot = TelegramBot()
 
@@ -17,12 +17,12 @@ class Command(BaseCommand):
             try:
                 await bot.start_polling()
             except KeyboardInterrupt:
-                self.stdout.write(self.style.WARNING('⏹️ Получен сигнал прерывания'))
+                self.stdout.write(self.style.WARNING("⏹️ Получен сигнал прерывания"))
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f'❌ Ошибка: {e}'))
+                self.stdout.write(self.style.ERROR(f"❌ Ошибка: {e}"))
             finally:
                 await bot.stop()
-                self.stdout.write(self.style.SUCCESS('✅ Бот корректно остановлен'))
+                self.stdout.write(self.style.SUCCESS("✅ Бот корректно остановлен"))
 
         def signal_handler(sig, frame):
             print("\n🛑 Получен сигнал завершения...")
@@ -35,4 +35,4 @@ class Command(BaseCommand):
         try:
             asyncio.run(main())
         except KeyboardInterrupt:
-            self.stdout.write(self.style.SUCCESS('⏹️ Бот остановлен'))
+            self.stdout.write(self.style.SUCCESS("⏹️ Бот остановлен"))
