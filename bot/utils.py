@@ -80,16 +80,17 @@ async def get_user_tasks(tg_id, category=None):
     response = requests.get(f'http://127.0.0.1:8000/api/tasks_list/', params=params)
     result = response.json()
     messages = []
-    for task in result:
-        message_text = f'''💼 Task: {task['title']}
-        🗂️ Category: {task['category']}
-        🕒 Created at: {datetime.fromisoformat(task['created_at']).strftime("%d.%m.%Y %H:%M")}
-        🕒 Deadline: {datetime.fromisoformat(task['deadline']).strftime("%d.%m.%Y %H:%M")}
-        📃 Description: {task['description']}
-        🏷️ Status: {task['status']}'''
-        messages.append(message_text)
+    if len(result) != 0:
+        for task in result:
+            message_text = f'''💼 Task: {task['title']}
+            🗂️ Category: {task['category']}
+            🕒 Created at: {datetime.fromisoformat(task['created_at']).strftime("%d.%m.%Y %H:%M")}
+            🕒 Deadline: {datetime.fromisoformat(task['deadline']).strftime("%d.%m.%Y %H:%M")}
+            📃 Description: {task['description']}
+            🏷️ Status: {task['status']}'''
+            messages.append(message_text)
     if len(messages) == 0:
-        return '❌ No tasks found'
+        return ['❌ No tasks found']
     return messages
 
 async def get_categories(prefix=None):
